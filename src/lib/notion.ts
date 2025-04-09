@@ -40,8 +40,8 @@ export const searchNotionPages = async (
           title = page.properties.Name.title[0].plain_text;
         } else if (page.properties && Object.values(page.properties).length > 0) {
           // いずれかのタイトルプロパティを探す
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          for (const [_, prop] of Object.entries<any>(page.properties)) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          for (const [_key, prop] of Object.entries<any>(page.properties)) {
             if (prop.type === 'title' && prop.title?.[0]?.plain_text) {
               title = prop.title[0].plain_text;
               break;
@@ -177,7 +177,7 @@ export const getPageComments = async (
         pageTitle = page.properties.Name.title[0].plain_text;
       } else {
         // タイトルプロパティを探す
-        for (const [_, prop] of Object.entries(page.properties || {})) {
+        for (const [_key, prop] of Object.entries(page.properties || {})) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const property = prop as any;
           if (property.type === 'title' && property.title?.[0]?.plain_text) {
@@ -223,12 +223,10 @@ export const getPageComments = async (
 };
 
 // リッチテキストからメンションを抽出する関数
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const extractMentions = (richText: Record<string, any>[]): string[] => {
+const extractMentions = (richText: any[]): string[] => {
   const mentions: string[] = [];
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  richText.forEach((text: Record<string, any>) => {
+  richText.forEach((text) => {
     if (text.type === 'mention' && text.mention?.type === 'user') {
       mentions.push(text.mention.user.name || text.mention.user.id);
     }

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getNotionClient, getSubpages, getPageComments, filterNoReplyComments, filterParticipatingThreads, filterMyComments } from '@/lib/notion';
 import { Comment } from '@/types';
 
