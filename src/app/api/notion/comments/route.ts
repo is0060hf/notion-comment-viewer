@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     
     // アクセス権限の問題を検出するためのフラグ
     let hasPermissionIssues = false;
-    let notFoundPages: string[] = [];
+    const notFoundPages: string[] = [];
     
     // まず対象ページの診断を行い、データベースかどうか確認
     console.log(`ページ診断を開始: ${rootPageId}`);

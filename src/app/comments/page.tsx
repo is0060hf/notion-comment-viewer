@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { Box, Container, Typography, AppBar, Toolbar, CircularProgress, Alert, Button, Modal, IconButton, Paper, List, ListItem, ListItemText, Divider, Link as MuiLink } from '@mui/material';
 import { useSearchParams } from 'next/navigation';
 import CommentFilters from '@/components/CommentFilters';
@@ -23,7 +23,7 @@ function DiagnoseModal({ open, onClose, pageId }: { open: boolean; onClose: () =
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
 
-  const runDiagnostics = async () => {
+  const runDiagnostics = useCallback(async () => {
     if (!pageId) return;
     
     setLoading(true);
@@ -44,13 +44,13 @@ function DiagnoseModal({ open, onClose, pageId }: { open: boolean; onClose: () =
     } finally {
       setLoading(false);
     }
-  };
+  }, [pageId]);
 
   useEffect(() => {
     if (open && pageId) {
       runDiagnostics();
     }
-  }, [open, pageId]);
+  }, [open, pageId, runDiagnostics]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);

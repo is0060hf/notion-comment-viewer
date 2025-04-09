@@ -696,6 +696,9 @@ export const diagnoseNotionPage = async (
         // データベース自体の情報も取得
         try {
           console.log(`診断: 親データベースの確認 - ${result.parentId}`);
+          if (!result.parentId) {
+            throw new Error('親データベースIDが不明です');
+          }
           const parentDb = await notionClient.databases.retrieve({
             database_id: result.parentId,
           });
