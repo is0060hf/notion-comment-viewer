@@ -79,8 +79,8 @@ export const searchNotionPages = async (
       };
     }));
 
-    // 完全一致のみを返す
-    return results.filter(page => page.title.toLowerCase() === query.toLowerCase());
+    // 完全一致フィルタを削除し、すべての検索結果を返す
+    return results;
   } catch (error) {
     console.error('Notion API検索エラー:', error);
     throw error;
