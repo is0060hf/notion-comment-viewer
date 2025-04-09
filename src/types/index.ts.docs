@@ -1,0 +1,60 @@
+// src/types/index.ts
+/**
+ * Notionコメントの型定義
+ * コメントスレッドとその返信を表現します
+ */
+export interface Comment {
+  commentId: string;        // コメントの一意識別子
+  pageId: string;           // コメントが属するページID
+  pageTitle: string;        // コメントが属するページタイトル
+  parentId?: string;        // 親コメントID（返信の場合）
+  author: string;           // 投稿者名
+  authorId: string;         // 投稿者ID
+  content: string;          // コメント内容
+  createdAt: string;        // 作成日時
+  lastReplyAt?: string;     // 最後の返信日時
+  isResolved: boolean;      // 解決済みフラグ
+  url: string;              // コメントへの直接リンク
+  mentions: string[];       // メンション（@ユーザー名）のリスト
+  replies: Comment[];       // 返信コメントのリスト
+}
+
+/**
+ * Notionページの検索結果の型定義
+ */
+export interface PageSearchResult {
+  id: string;               // ページID
+  title: string;            // ページタイトル
+  url: string;              // ページURL
+  lastEditedTime: string;   // 最終編集日時
+}
+
+/**
+ * フィルター条件の型定義
+ */
+export interface CommentFilters {
+  filterUnresolved: boolean;       // 未解決コメントのみ表示
+  filterNoReplyDays: number;       // N日以上返信がないコメントのみ表示
+  filterMyComments: boolean;       // 自分宛てのコメントのみ表示
+  includeSubPages: boolean;        // サブページも含めて検索
+}
+
+/**
+ * NextAuth.jsのセッション拡張
+ * Notionアクセストークンを含めるための型定義
+ */
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+  }
+}
+
+/**
+ * NextAuth.jsのJWT拡張
+ * Notionアクセストークンを含めるための型定義
+ */
+declare module "next-auth/jwt" {
+  interface JWT {
+    accessToken?: string;
+  }
+}

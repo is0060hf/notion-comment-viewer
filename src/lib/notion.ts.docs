@@ -1,0 +1,82 @@
+// src/lib/notion.ts
+/**
+ * Notion APIとの連携機能を提供するユーティリティ関数群
+ * コメント取得、ページ検索、フィルタリングなどの機能を実装
+ */
+
+import { Client } from '@notionhq/client';
+import { Comment, PageSearchResult } from '@/types';
+
+/**
+ * Notion APIクライアントを初期化する
+ * @param accessToken ユーザーのNotionアクセストークン
+ * @returns 初期化されたNotionクライアントインスタンス
+ */
+export function getNotionClient(accessToken: string) {
+  return new Client({
+    auth: accessToken,
+  });
+}
+
+/**
+ * Notionページを検索する
+ * @param notionClient Notionクライアントインスタンス
+ * @param query 検索クエリ
+ * @returns 検索結果のページリスト
+ */
+export async function searchNotionPages(notionClient: Client, query: string): Promise<PageSearchResult[]> {
+  // ページ検索APIを呼び出し、結果を整形して返す
+  // 検索結果はタイトル、ID、URL、最終編集日時を含む
+}
+
+/**
+ * 指定されたページとそのサブページのIDリストを再帰的に取得する
+ * @param notionClient Notionクライアントインスタンス
+ * @param rootPageId ルートページID
+ * @returns ページIDのリスト（ルートページとすべてのサブページを含む）
+ */
+export async function getSubpages(notionClient: Client, rootPageId: string): Promise<string[]> {
+  // 指定されたページのサブページを再帰的に取得
+  // データベースとページの両方に対応
+}
+
+/**
+ * 指定されたページのコメントを取得する
+ * @param notionClient Notionクライアントインスタンス
+ * @param pageId ページID
+ * @returns コメントのリスト
+ */
+export async function getPageComments(notionClient: Client, pageId: string): Promise<Comment[]> {
+  // ページのコメントを取得し、スレッドと返信を整形
+  // 各コメントにはメタデータ（作成日時、著者、解決状態など）を付与
+}
+
+/**
+ * 一定期間返信がないコメントをフィルタリングする
+ * @param comments コメントリスト
+ * @param days 日数（この日数以上返信がないコメントを抽出）
+ * @returns フィルタリングされたコメントリスト
+ */
+export function filterNoReplyComments(comments: Comment[], days: number): Comment[] {
+  // 指定された日数以上返信がないコメントをフィルタリング
+}
+
+/**
+ * 特定ユーザー宛てのコメントをフィルタリングする
+ * @param comments コメントリスト
+ * @param userId ユーザーID
+ * @returns フィルタリングされたコメントリスト
+ */
+export function filterMyComments(comments: Comment[], userId: string): Comment[] {
+  // ユーザー宛てのコメント（メンションを含む）をフィルタリング
+}
+
+/**
+ * ユーザーが参加しているスレッドをフィルタリングする
+ * @param comments コメントリスト
+ * @param userId ユーザーID
+ * @returns フィルタリングされたコメントリスト
+ */
+export function filterParticipatingThreads(comments: Comment[], userId: string): Comment[] {
+  // ユーザーが投稿したコメントを含むスレッドをフィルタリング
+}
