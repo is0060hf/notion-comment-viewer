@@ -26,13 +26,61 @@ export const searchNotionPages = async (
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return response.results.map((page: Record<string, any>) => ({
-      id: page.id,
-      title: page.properties?.title?.title?.[0]?.plain_text || 
-             page.properties?.Name?.title?.[0]?.plain_text || 
-             'Untitled',
-      url: page.url,
+    const results = await Promise.all(response.results.map(async (page: Record<string, any>) => {
+      // ページタイトルの取得試行
+      let title = 'Untitled';
+      
+      try {
+        // ページタイトルを取得する複数の方法を試みる
+        if (page.properties?.title?.title?.[0]?.plain_text) {
+          // 通常ページのタイトル
+          title = page.properties.title.title[0].plain_text;
+        } else if (page.properties?.Name?.title?.[0]?.plain_text) {
+          // 'Name'プロパティを持つページ
+          title = page.properties.Name.title[0].plain_text;
+        } else if (page.properties && Object.values(page.properties).length > 0) {
+          // いずれかのタイトルプロパティを探す
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          for (const [_, prop] of Object.entries<any>(page.properties)) {
+            if (prop.type === 'title' && prop.title?.[0]?.plain_text) {
+              title = prop.title[0].plain_text;
+              break;
+            }
+          }
+        } else if (page.child_page?.title) {
+          // 子ページタイトル
+          title = page.child_page.title;
+        }
+        
+        // それでもタイトルが取得できない場合はページの詳細を取得
+        if (title === 'Untitled' && page.id) {
+          try {
+            const pageDetails = await notionClient.pages.retrieve({ page_id: page.id });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const details = pageDetails as any;
+            
+            if (details.properties?.title?.title?.[0]?.plain_text) {
+              title = details.properties.title.title[0].plain_text;
+            } else if (details.properties?.Name?.title?.[0]?.plain_text) {
+              title = details.properties.Name.title[0].plain_text;
+            }
+          } catch (err) {
+            console.log('ページ詳細取得エラー:', err);
+          }
+        }
+      } catch (err) {
+        console.error('タイトル取得エラー:', err);
+      }
+      
+      return {
+        id: page.id,
+        title: title,
+        url: page.url,
+      };
     }));
+
+    // 完全一致のみを返す
+    return results.filter(page => page.title.toLowerCase() === query.toLowerCase());
   } catch (error) {
     console.error('Notion API検索エラー:', error);
     throw error;
@@ -52,25 +100,49 @@ export const getSubpages = async (
   allPages.push(pageId);
 
   try {
-    const response = await notionClient.search({
-      filter: {
-        property: 'object',
-        value: 'page',
-      },
-      sort: {
-        direction: 'descending',
-        timestamp: 'last_edited_time',
-      },
+    // まずページブロックの子ブロックを取得
+    const blockChildren = await notionClient.blocks.children.list({
+      block_id: pageId,
+      page_size: 100,
     });
 
+    // 子ブロックの中からページタイプのものを抽出
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const subpages = response.results.filter((page: Record<string, any>) => {
-      // 親ページIDを確認（APIの仕様に応じて調整が必要かもしれません）
-      return page.parent?.page_id === pageId;
-    });
+    const childPages = blockChildren.results.filter((block: Record<string, any>) => 
+      block.type === 'child_page' || block.type === 'page'
+    );
 
-    for (const subpage of subpages) {
-      await getSubpages(notionClient, subpage.id, allPages);
+    // 各子ページについて再帰的に処理
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const childPage of childPages) {
+      await getSubpages(notionClient, childPage.id, allPages);
+    }
+
+    // データベース内のページも検索
+    try {
+      // ページの詳細情報を取得し、それがデータベースかどうか確認
+      const pageInfo = await notionClient.pages.retrieve({
+        page_id: pageId,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((pageInfo as any).parent?.type === 'database_id') {
+        // データベース内の全ページを取得
+        const databaseId = (pageInfo as any).parent.database_id;
+        const dbPages = await notionClient.databases.query({
+          database_id: databaseId,
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        for (const dbPage of dbPages.results) {
+          if (!allPages.includes(dbPage.id)) {
+            await getSubpages(notionClient, dbPage.id, allPages);
+          }
+        }
+      }
+    } catch (e) {
+      // データベース取得エラーは無視（通常のページの場合など）
+      console.log('データベース取得スキップ:', e);
     }
 
     return allPages;
@@ -90,6 +162,34 @@ export const getPageComments = async (
       block_id: pageId,
     });
 
+    // ページのタイトルを取得
+    let pageTitle = 'Untitled';
+    try {
+      const pageInfo = await notionClient.pages.retrieve({
+        page_id: pageId,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const page = pageInfo as any;
+      if (page.properties?.title?.title?.[0]?.plain_text) {
+        pageTitle = page.properties.title.title[0].plain_text;
+      } else if (page.properties?.Name?.title?.[0]?.plain_text) {
+        pageTitle = page.properties.Name.title[0].plain_text;
+      } else {
+        // タイトルプロパティを探す
+        for (const [_, prop] of Object.entries(page.properties || {})) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const property = prop as any;
+          if (property.type === 'title' && property.title?.[0]?.plain_text) {
+            pageTitle = property.title[0].plain_text;
+            break;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('ページタイトル取得エラー:', err);
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return response.results.map((comment: Record<string, any>) => {
       // コメントスレッドの処理
@@ -98,7 +198,7 @@ export const getPageComments = async (
       return {
         commentId: comment.id,
         pageId: pageId,
-        pageTitle: '', // APIからページタイトルを取得する方法が必要
+        pageTitle: pageTitle,
         author: comment.created_by.name || 'Unknown',
         content: comment.rich_text?.[0]?.plain_text || '',
         isResolved: comment.resolved || false,

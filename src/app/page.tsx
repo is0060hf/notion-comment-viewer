@@ -12,7 +12,8 @@ import {
   CircularProgress, 
   AppBar, 
   Toolbar,
-  Paper
+  Paper,
+  Button
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -51,17 +52,14 @@ export default function Home() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
-    
-    // 入力が2文字以上の場合のみ検索を実行
-    if (query.length >= 2) {
-      const debounce = setTimeout(() => {
-        handleSearch(query);
-      }, 300);
-      
-      return () => clearTimeout(debounce);
-    } else {
+  };
+
+  const handleSearchButtonClick = () => {
+    if (searchQuery.length < 2) {
       setSearchResults([]);
+      return;
     }
+    handleSearch(searchQuery);
   };
 
   const handleSelectPage = (pageId: string, pageTitle: string) => {
@@ -113,6 +111,17 @@ export default function Home() {
                     ) : null,
                   }}
                 />
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button 
+                    variant="contained" 
+                    color="primary" 
+                    onClick={handleSearchButtonClick}
+                    disabled={isLoading || searchQuery.length < 2}
+                    startIcon={<SearchIcon />}
+                  >
+                    検索
+                  </Button>
+                </Box>
               </Box>
               
               {searchResults.length > 0 && (
