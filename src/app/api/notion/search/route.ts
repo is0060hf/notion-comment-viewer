@@ -32,6 +32,9 @@ export async function GET(request: NextRequest) {
     // ページを検索
     const results = await searchNotionPages(notionClient, query);
     
+    // デバッグ情報を追加
+    console.log(`検索クエリ「${query}」の結果:`, results);
+    
     return NextResponse.json({ results });
   } catch (error) {
     console.error('Notion検索API エラー:', error);
